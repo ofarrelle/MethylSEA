@@ -123,6 +123,7 @@ typedef struct {
     int nThreads;
     char noBAM;
     unsigned long chunkSize;
+    int endAligned;
 } Config;
 
 /*! @typedef
@@ -193,7 +194,7 @@ int cust_mplp_auto(bam_mplp_t iter, int *_tid, int *_pos, int *n_plp, const bam_
  @param meths	The struct holding the methylation metrics for each of the 4 strands. If a strand is not present, it's length (->l) should be 0
  @param which   Denotes which types of Cytosines were used to generate the methylation metric. Bit 0: CpG, bit 1: CHG, bit 2: CHH (these can be combined)
 */
-void makeSVGs(char *opref, strandMeth **meths, int which);
+void makeSVGs(char *opref, strandMeth **meths, int which, int endAligned);
 
 /*! @function
  @abstract Print tab-separated methylation metrics to the command line. These can be manually analyzed.

@@ -171,7 +171,14 @@ double remapX(int orig, int maxX, int buffer, int dim) {
     return buffer + ((double) dim)*orig/((double) maxX);
 }
 
-void plotCI(FILE *of, int minX, int maxX, strandMeth *m, int which, char *col, int buffer, int dim, double minY, double maxY) {
+//For start-aligned plots array index i is drawn at coordinate i+1 (1-based position).
+//For end-aligned plots index i is distance from the 3' end, so it's drawn at maxX-i,
+//placing i=0 (the read's last base) at the right edge.
+int plotCoord(int i, int maxX, int endAligned) {
+    return endAligned ? maxX - i : i + 1;
+}
+
+void plotCI(FILE *of, int minX, int maxX, strandMeth *m, int which, char *col, int buffer, int dim, double minY, double maxY, int endAligned) {
     uint32_t *meth, *umeth;
     int32_t i;
     double val;
@@ -186,11 +193,11 @@ void plotCI(FILE *of, int minX, int maxX, strandMeth *m, int which, char *col, i
 
     //Start the path
     val = CI(umeth[minX], meth[minX], 0);
-    fprintf(of, "<path d=\"M %f %f\n", remapX(minX+1, maxX, buffer,dim), remapY(val, minY, maxY, buffer, dim));
+    fprintf(of, "<path d=\"M %f %f\n", remapX(plotCoord(minX, maxX, endAligned), maxX, buffer,dim), remapY(val, minY, maxY, buffer, dim));
     for(i=minX+1; i<=m->l; i++) {
         if(meth[i]||umeth[i]) {
             val = CI(umeth[i], meth[i], 0);
-            fprintf(of, "  L %f %f\n", remapX(i+1, maxX, buffer,dim), remapY(val, minY, maxY, buffer, dim));
+            fprintf(of, "  L %f %f\n", remapX(plotCoord(i, maxX, endAligned), maxX, buffer,dim), remapY(val, minY, maxY, buffer, dim));
         }
     }
     for(i=m->l-1; i>=0; i--) {
@@ -202,7 +209,7 @@ void plotCI(FILE *of, int minX, int maxX, strandMeth *m, int which, char *col, i
     fprintf(of, "Z\" fill=\"%s\" fill-opacity=\"0.2\"/>\n", col);
 }
 
-void plotVals(FILE *of, int minX, int maxX, strandMeth *m, int which, char *col, int buffer, int dim, double minY, double maxY) {
+void plotVals(FILE *of, int minX, int maxX, strandMeth *m, int which, char *col, int buffer, int dim, double minY, double maxY, int endAligned) {
     uint32_t *meth, *umeth;
     int32_t i;
     double val;
@@ -218,11 +225,11 @@ void plotVals(FILE *of, int minX, int maxX, strandMeth *m, int which, char *col,
 
     //Start the path
     val = meth[minX]/((double) (meth[minX]+umeth[minX]));
-    fprintf(of, "<path d=\"M %f %f\n", remapX(minX+1, maxX, buffer,dim), remapY(val, minY, maxY, buffer, dim));
+    fprintf(of, "<path d=\"M %f %f\n", remapX(plotCoord(minX, maxX, endAligned), maxX, buffer,dim), remapY(val, minY, maxY, buffer, dim));
     for(i=minX+1; i<=m->l; i++) {
         if(meth[i]||umeth[i]) {
             val = meth[i]/((double) (meth[i]+umeth[i]));
-            fprintf(of, "  L %f %f\n", remapX(i+1, maxX, buffer,dim), remapY(val, minY, maxY, buffer, dim));
+            fprintf(of, "  L %f %f\n", remapX(plotCoord(i, maxX, endAligned), maxX, buffer,dim), remapY(val, minY, maxY, buffer, dim));
         }
     }
     fprintf(of, "\" stroke=\"%s\" stroke-width=\"2\" fill-opacity=\"0\"/>\n", col);
@@ -299,11 +306,12 @@ void getThresholds(strandMeth *m, int which, int *lthresh, int *rthresh) {
 // bit 0: CpG
 // bit 1: CHG
 // bit 2: CHH
-void makeSVGs(char *opref, strandMeth **meths, int which) {
+void makeSVGs(char *opref, strandMeth **meths, int which, int endAligned) {
     double minY = 1.0, maxY = 0.0;
     int minX1 = -1, minX2 = -1, maxX = 0, hasRead1 = 0, hasRead2 = 0;
     int i, j, buffer = 80, dim = 500, nXTicks, nYTicks;
-    char *oname = malloc(sizeof(char) *(strlen(opref)+strlen("_CTOT.svg ")));
+    char *suffix = endAligned ? "_end" : "";
+    char *oname = malloc(sizeof(char) *(strlen(opref)+strlen("_CTOT_end.svg ")));
     char *titles[4] = {"Original Top", "Original Bottom",
                        "Complementary to the Original Top", "Complementary to the Original Bottom"};
     char *abbrevs[4] = {"OT", "OB", "CTOT", "CTOB"};
@@ -326,7 +334,7 @@ void makeSVGs(char *opref, strandMeth **meths, int which) {
             yTicks = getYTicks(minY, maxY, &nYTicks);
 
             //Basic plot setup
-            sprintf(oname, "%s_%s.svg", opref, abbrevs[i]);
+            sprintf(oname, "%s_%s%s.svg", opref, abbrevs[i], suffix);
             of = fopen(oname, "w");
             fprintf(of, "<svg height=\"%i\" width=\"%i\"\n", dim+2*buffer, dim+2*buffer);
             fprintf(of, "    xmlns=\"http://www.w3.org/2000/svg\"\n");
@@ -357,18 +365,24 @@ void makeSVGs(char *opref, strandMeth **meths, int which) {
             }
             if(doingLabel) fprintf(of, " ");
             fprintf(of, "Methylation %%</text>\n");
-            fprintf(of,"<text x=\"%i\" y=\"%i\" text-anchor=\"middle\">Position along mapped read (5'->3' of + strand)</text>\n", buffer+(dim>>1), buffer+dim+40);
+            if(endAligned)
+                fprintf(of,"<text x=\"%i\" y=\"%i\" text-anchor=\"middle\">Position from 3' end of mapped read</text>\n", buffer+(dim>>1), buffer+dim+40);
+            else
+                fprintf(of,"<text x=\"%i\" y=\"%i\" text-anchor=\"middle\">Position along mapped read (5'->3' of + strand)</text>\n", buffer+(dim>>1), buffer+dim+40);
+            //The "0" position sits at the left edge when start-aligned and at the right edge (the read's last base) when end-aligned
             fprintf(of,"<line x1=\"%i\" y1=\"%i\" x2=\"%i\" y2=\"%i\" stroke=\"black\" />\n", \
-                buffer, buffer+dim, buffer, buffer+dim+5);
+                endAligned ? buffer+dim : buffer, buffer+dim, endAligned ? buffer+dim : buffer, buffer+dim+5);
             fprintf(of,"<text x=\"%i\" y=\"%i\" text-anchor=\"middle\">%i</text>\n", \
-                buffer, buffer+dim+20, 0);
+                endAligned ? buffer+dim : buffer, buffer+dim+20, 0);
             for(j=0; j<nXTicks; j++) {
+                //In end-aligned mode a tick at distance d from the end is drawn at maxX-d
+                int xpos = endAligned ? maxX - xTicks[j] : xTicks[j];
                 fprintf(of,"<line x1=\"%f\" y1=\"%i\" x2=\"%f\" y2=\"%i\" stroke-dasharray=\"5 5\" stroke=\"grey\" />\n", \
-                    remapX(xTicks[j], maxX, buffer, dim), buffer, remapX(xTicks[j], maxX, buffer, dim), buffer+dim);
+                    remapX(xpos, maxX, buffer, dim), buffer, remapX(xpos, maxX, buffer, dim), buffer+dim);
                 fprintf(of,"<line x1=\"%f\" y1=\"%i\" x2=\"%f\" y2=\"%i\" stroke=\"black\" />\n", \
-                    remapX(xTicks[j], maxX, buffer, dim), buffer+dim, remapX(xTicks[j], maxX, buffer, dim), buffer+dim+5);
+                    remapX(xpos, maxX, buffer, dim), buffer+dim, remapX(xpos, maxX, buffer, dim), buffer+dim+5);
                 fprintf(of,"<text x=\"%f\" y=\"%i\" text-anchor=\"middle\">%i</text>\n", \
-                    remapX(xTicks[j], maxX, buffer, dim), buffer+dim+20, xTicks[j]);
+                    remapX(xpos, maxX, buffer, dim), buffer+dim+20, xpos);
             }
             for(j=0; j<nYTicks; j++) {
                 fprintf(of,"<line x1=\"%i\" y1=\"%f\" x2=\"%i\" y2=\"%f\" stroke=\"black\" />\n", \
@@ -385,27 +399,30 @@ void makeSVGs(char *opref, strandMeth **meths, int which) {
             }
 
             //Draw the lines
-            if(hasRead1) plotCI(of, minX1, maxX, meths[i], 1, col1, buffer, dim, minY, maxY);
-            if(hasRead2) plotCI(of, minX2, maxX, meths[i], 2, col2, buffer, dim, minY, maxY);
-            if(hasRead1) plotVals(of, minX1, maxX, meths[i], 1, col1, buffer, dim, minY, maxY);
-            if(hasRead2) plotVals(of, minX2, maxX, meths[i], 2, col2, buffer, dim, minY, maxY);
+            if(hasRead1) plotCI(of, minX1, maxX, meths[i], 1, col1, buffer, dim, minY, maxY, endAligned);
+            if(hasRead2) plotCI(of, minX2, maxX, meths[i], 2, col2, buffer, dim, minY, maxY, endAligned);
+            if(hasRead1) plotVals(of, minX1, maxX, meths[i], 1, col1, buffer, dim, minY, maxY, endAligned);
+            if(hasRead2) plotVals(of, minX2, maxX, meths[i], 2, col2, buffer, dim, minY, maxY, endAligned);
 
-            //Get cutting threshold suggestions
-            getThresholds(meths[i], 1, &lthresh1, &rthresh1);
-            getThresholds(meths[i], 2, &lthresh2, &rthresh2);
-            if(lthresh1+lthresh2+rthresh1+rthresh2) {
-                fprintf(of, "<text x=\"%i\" y=\"%i\" text-anchor=\"end\">--%s %i,%i,%i,%i</text>\n", \
-                    2*buffer+dim-10, 2*buffer+dim-10, abbrevs[i], lthresh1, rthresh1, lthresh2, rthresh2);
-                if(lthresh1) fprintf(of, "<line x1=\"%f\" y1=\"%i\" x2=\"%f\" y2=\"%i\" stroke-dasharray=\"5 1\" stroke=\"%s\" stroke-width=\"1\" />\n", \
-                    remapX(lthresh1, maxX, buffer, dim), dim+buffer, remapX(lthresh1, maxX, buffer, dim), buffer, col1);
-                if(rthresh1) fprintf(of, "<line x1=\"%f\" y1=\"%i\" x2=\"%f\" y2=\"%i\" stroke-dasharray=\"5 1\" stroke=\"%s\" stroke-width=\"1\" />\n", \
-                    remapX(rthresh1, maxX, buffer, dim), dim+buffer, remapX(rthresh1, maxX, buffer, dim), buffer, col1);
-                if(lthresh2) fprintf(of, "<line x1=\"%f\" y1=\"%i\" x2=\"%f\" y2=\"%i\" stroke-dasharray=\"5 1\" stroke=\"%s\" stroke-width=\"1\" />\n", \
-                    remapX(lthresh2, maxX, buffer, dim), dim+buffer, remapX(lthresh2, maxX, buffer, dim), buffer, col2);
-                if(rthresh2) fprintf(of, "<line x1=\"%f\" y1=\"%i\" x2=\"%f\" y2=\"%i\" stroke-dasharray=\"5 1\" stroke=\"%s\" stroke-width=\"1\" />\n", \
-                    remapX(rthresh2, maxX, buffer, dim), dim+buffer, remapX(rthresh2, maxX, buffer, dim), buffer, col2);
+            //Get cutting threshold suggestions. These are defined in start-aligned
+            //coordinates, so they're only emitted for the start-aligned plots.
+            lthresh1 = lthresh2 = rthresh1 = rthresh2 = 0;
+            if(!endAligned) {
+                getThresholds(meths[i], 1, &lthresh1, &rthresh1);
+                getThresholds(meths[i], 2, &lthresh2, &rthresh2);
+                if(lthresh1+lthresh2+rthresh1+rthresh2) {
+                    fprintf(of, "<text x=\"%i\" y=\"%i\" text-anchor=\"end\">--%s %i,%i,%i,%i</text>\n", \
+                        2*buffer+dim-10, 2*buffer+dim-10, abbrevs[i], lthresh1, rthresh1, lthresh2, rthresh2);
+                    if(lthresh1) fprintf(of, "<line x1=\"%f\" y1=\"%i\" x2=\"%f\" y2=\"%i\" stroke-dasharray=\"5 1\" stroke=\"%s\" stroke-width=\"1\" />\n", \
+                        remapX(lthresh1, maxX, buffer, dim), dim+buffer, remapX(lthresh1, maxX, buffer, dim), buffer, col1);
+                    if(rthresh1) fprintf(of, "<line x1=\"%f\" y1=\"%i\" x2=\"%f\" y2=\"%i\" stroke-dasharray=\"5 1\" stroke=\"%s\" stroke-width=\"1\" />\n", \
+                        remapX(rthresh1, maxX, buffer, dim), dim+buffer, remapX(rthresh1, maxX, buffer, dim), buffer, col1);
+                    if(lthresh2) fprintf(of, "<line x1=\"%f\" y1=\"%i\" x2=\"%f\" y2=\"%i\" stroke-dasharray=\"5 1\" stroke=\"%s\" stroke-width=\"1\" />\n", \
+                        remapX(lthresh2, maxX, buffer, dim), dim+buffer, remapX(lthresh2, maxX, buffer, dim), buffer, col2);
+                    if(rthresh2) fprintf(of, "<line x1=\"%f\" y1=\"%i\" x2=\"%f\" y2=\"%i\" stroke-dasharray=\"5 1\" stroke=\"%s\" stroke-width=\"1\" />\n", \
+                        remapX(rthresh2, maxX, buffer, dim), dim+buffer, remapX(rthresh2, maxX, buffer, dim), buffer, col2);
+                }
             }
-
             //Add some legend boxes on the right
             if(hasRead1) {
                 fprintf(of, "<rect x=\"%i\" y=\"%i\" width=\"20\" height=\"20\" fill=\"%s\" />\n", dim+buffer+10, (dim>>1)+buffer-20, col1);
@@ -419,10 +436,12 @@ void makeSVGs(char *opref, strandMeth **meths, int which) {
             //Finish the image
             fprintf(of, "</svg>\n");
 
-            //Print the trimming options to stderr
-            if(!alreadyPrinting) fprintf(stderr, "Suggested inclusion options:");
-            fprintf(stderr, " --%s %i,%i,%i,%i", abbrevs[i], lthresh1,rthresh1,lthresh2,rthresh2);
-            alreadyPrinting=1;
+            //Print the trimming options to stderr (start-aligned plots only)
+            if(!endAligned) {
+                if(!alreadyPrinting) fprintf(stderr, "Suggested inclusion options:");
+                fprintf(stderr, " --%s %i,%i,%i,%i", abbrevs[i], lthresh1,rthresh1,lthresh2,rthresh2);
+                alreadyPrinting=1;
+            }
 
             //Clean up
             fclose(of);

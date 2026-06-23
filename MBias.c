@@ -65,14 +65,15 @@ void *extractMBias(void *foo) {
     const bam_pileup1_t **plp = NULL;
     char *seq = NULL, base;
     mplp_data *data = NULL;
-    strandMeth **meths = malloc(4*sizeof(strandMeth*));
+    //Indices 0-3 are start-aligned (by qpos), 4-7 are end-aligned (by distance from the 3' end)
+    strandMeth **meths = malloc(8*sizeof(strandMeth*));
     assert(meths);
     uint32_t localPos = 0, localEnd = 0, localTid = 0;
     faidx_t *fai;
     hts_idx_t *bai;
     htsFile *fp;
 
-    for(i=0; i<4; i++) {
+    for(i=0; i<8; i++) {
         meths[i] = calloc(1, sizeof(strandMeth));
         assert(meths[i]);
     }
@@ -210,6 +211,32 @@ void *extractMBias(void *foo) {
                         }
                     }
                     if((plp[0]+i)->qpos+1 > meths[strand-1]->l) meths[strand-1]->l = (plp[0]+i)->qpos+1;
+
+                    //End-aligned accumulation: index by distance from the 3' end of the read
+                    if(config->endAligned) {
+                        int32_t endStrand = strand-1+4;
+                        int32_t endPos = (plp[0]+i)->b->core.l_qseq - 1 - (plp[0]+i)->qpos;
+                        if(endPos >= meths[endStrand]->m)
+                            meths[endStrand] = growStrandMeth(meths[endStrand], endPos);
+                        if(rv < 0) {
+                            if((plp[0]+i)->b->core.flag & BAM_FREAD2) {
+                                assert((meths[endStrand]->unmeth2[endPos]) < 0xFFFFFFFF);
+                                meths[endStrand]->unmeth2[endPos]++;
+                            } else {
+                                assert((meths[endStrand]->unmeth1[endPos]) < 0xFFFFFFFF);
+                                meths[endStrand]->unmeth1[endPos]++;
+                            }
+                        } else {
+                            if((plp[0]+i)->b->core.flag & BAM_FREAD2) {
+                                assert((meths[endStrand]->meth2[endPos]) < 0xFFFFFFFF);
+                                meths[endStrand]->meth2[endPos]++;
+                            } else {
+                                assert((meths[endStrand]->meth1[endPos]) < 0xFFFFFFFF);
+                                meths[endStrand]->meth1[endPos]++;
+                            }
+                        }
+                        if(endPos+1 > meths[endStrand]->l) meths[endStrand]->l = endPos+1;
+                    }
                 }
             }
         }
@@ -279,6 +306,12 @@ void mbias_usage() {
 "                  analysis. Note that coordinates are 1-based.\n"
 " --noSVG          Don't produce the SVG files. This option implies --txt. Note\n"
 "                  that an output prefix is no longer required with this option.\n"
+" --endAligned     In addition to the normal SVG files (where each read's first\n"
+"                  base is pinned to the left), produce a second set of SVGs per\n"
+"                  strand (suffixed _end) where each read's last base is pinned to\n"
+"                  the right and the x-axis is the position from the 3' end of the\n"
+"                  read. This is useful for single-end data with variable read\n"
+"                  lengths, where end-of-read bias would otherwise be smeared.\n"
 " --noCpG          Do not output CpG methylation metrics\n"
 " --CHG            Output CHG methylation metrics\n"
 " --CHH            Output CHH methylation metrics\n"
@@ -304,7 +337,7 @@ void mbias_usage() {
 int mbias_main(int argc, char *argv[]) {
     char *opref = NULL;
     int c, i, j, SVG = 1, txt = 0, keepStrand = 0;
-    strandMeth *meths[4], **threadout = NULL;
+    strandMeth *meths[8], **threadout = NULL;
     Config config;
     bam_hdr_t *hdr = NULL;
 
@@ -324,6 +357,7 @@ int mbias_main(int argc, char *argv[]) {
     config.nThreads = 1;
     config.chunkSize = 1000000;
     config.minConversionEfficiency = 0.0;
+    config.endAligned = 0;
     for(i=0; i<16; i++) config.bounds[i] = 0;
     for(i=0; i<16; i++) config.absoluteBounds[i] = 0;
 
@@ -344,6 +378,7 @@ int mbias_main(int argc, char *argv[]) {
         {"keepStrand",   0, NULL,  14},
         {"minConversionEfficiency", 1, NULL, 15},
         {"ignoreNH",     0, NULL,  16},
+        {"endAligned",   0, NULL,  17},
         {"ignoreFlags",  1, NULL, 'F'},
         {"requireFlags", 1, NULL, 'R'},
         {"help",         0, NULL, 'h'},
@@ -419,6 +454,9 @@ int mbias_main(int argc, char *argv[]) {
             break;
         case 16:
             config.ignoreNH = 1;
+            break;
+        case 17:
+            config.endAligned = 1;
             break;
         case 'F' :
             config.ignoreFlags = atoi(optarg);
@@ -529,7 +567,7 @@ int mbias_main(int argc, char *argv[]) {
         }
     }
 
-    for(i=0; i<4; i++) {
+    for(i=0; i<8; i++) {
         meths[i] = calloc(1, sizeof(strandMeth));
         assert(meths[i]);
     }
@@ -540,7 +578,7 @@ int mbias_main(int argc, char *argv[]) {
     for(i=0; i < config.nThreads; i++) pthread_create(threads+i, NULL, &extractMBias, &config);
     for(i=0; i < config.nThreads; i++) {
         pthread_join(threads[i], (void**) &threadout);
-        for(j=0; j<4; j++) {
+        for(j=0; j<8; j++) {
             meths[j] = mergeStrandMeth(meths[j], threadout[j]);
             if(threadout[j]->meth1) free(threadout[j]->meth1);
             if(threadout[j]->unmeth1) free(threadout[j]->unmeth1);
@@ -555,7 +593,8 @@ int mbias_main(int argc, char *argv[]) {
     pthread_mutex_destroy(&positionMutex);
 
     //Report some output
-    if(SVG) makeSVGs(opref, meths, config.keepCpG + 2*config.keepCHG + 4*config.keepCHH);
+    if(SVG) makeSVGs(opref, meths, config.keepCpG + 2*config.keepCHG + 4*config.keepCHH, 0);
+    if(SVG && config.endAligned) makeSVGs(opref, meths+4, config.keepCpG + 2*config.keepCHG + 4*config.keepCHH, 1);
     if(txt) makeTXT(meths);
 
     //Close things up
