@@ -8,3 +8,6 @@ MethylDackel
 version.h
 MethylDackel.dSYM/*
 .DS_Store
+
+*__pycache__/
+CLAUDE.md
