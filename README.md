@@ -48,6 +48,7 @@ make test # One test will fail, but it also fails with regular methyldackel
 ```
 
 # Usage
+
 For `mbias`, use the execultable built by `make`:
 ```
 ./path/to/MethylDackel/MethylDackel mbias \

@@ -107,45 +107,14 @@ int getMaxX(strandMeth *m) {
     assert(1==0);
 }
 
-int *getXTicks(int maxX, int *n) {
-    int *o, maxN = 7, i, span = 5;
-
-    /***************************************************************************
-     *
-     * Make ticks in intervals of 5, 10, 25, 50, etc. such that there are no
-     * more than maxN ticks.
-     *
-    ***************************************************************************/
-    *n = maxX/5;
-    if(*n > maxN) {
-        span = 10;
-        *n = maxX/span;
-    } else if(*n > maxN) {
-        span = 25;
-        *n = maxX/span;
-    } else if(*n > maxN) {
-        span = 50;
-        *n = maxX/span;
-    } else if(*n > maxN) {
-        span = 100;
-        *n = maxX/span;
-    } else if(*n > maxN) {
-        span = 250;
-        *n = maxX/span;
-    } else if(*n > maxN) {
-        span = 500;
-        *n = maxX/span;
-    } else if(*n > maxN) {
-        span = 1000;
-        *n = maxX/span;
-    }
-
-    o = malloc((*n) * sizeof(int));
-    assert(o);
-
-    for(i=0; i<*n; i++) o[i] = (i+1)*span;
-
-    return o;
+//Choose x-axis label and hash-line spacing (bp) from the plot width. The label
+//interval is always a multiple of the hash interval, so every label sits on a
+//hash line. Widening the label interval keeps numeric labels from overlapping.
+void getTickSpans(int maxX, int *labelSpan, int *hashSpan) {
+    if(maxX <= 160)      { *labelSpan = 10; *hashSpan = 10; }
+    else if(maxX <= 320) { *labelSpan = 20; *hashSpan = 10; }
+    else if(maxX <= 480) { *labelSpan = 30; *hashSpan = 10; }
+    else                 { *labelSpan = 40; *hashSpan = 20; }
 }
 
 double *getYTicks(double minY, double maxY, int *n) {
@@ -309,7 +278,8 @@ void getThresholds(strandMeth *m, int which, int *lthresh, int *rthresh) {
 void makeSVGs(char *opref, strandMeth **meths, int which, int endAligned) {
     double minY = 1.0, maxY = 0.0;
     int minX1 = -1, minX2 = -1, maxX = 0, hasRead1 = 0, hasRead2 = 0;
-    int i, j, buffer = 80, dim = 500, nXTicks, nYTicks;
+    int i, j, buffer = 80, dim = 500, nYTicks;
+    int labelSpan, hashSpan;
     char *oname = malloc(sizeof(char) *(strlen(opref)+strlen("_CTOT_3prime_aligned.svg ")));
     char *titles[4] = {"Original Top", "Original Bottom",
                        "Complementary to the Original Top", "Complementary to the Original Bottom"};
@@ -318,7 +288,7 @@ void makeSVGs(char *opref, strandMeth **meths, int which, int endAligned) {
     char *col2 = "rgb(0,191,196)";
     FILE *of;
     double *yTicks;
-    int *xTicks, lthresh1, lthresh2, rthresh1, rthresh2;
+    int lthresh1, lthresh2, rthresh1, rthresh2;
     int alreadyPrinting = 0, doingLabel = 0;
 
     for(i=0; i<4; i++) {
@@ -341,7 +311,7 @@ void makeSVGs(char *opref, strandMeth **meths, int which, int endAligned) {
             minX1 = getMinX(meths[i], 1);
             minX2 = getMinX(meths[i], 2);
             maxX = getMaxX(meths[i]);
-            xTicks = getXTicks(maxX, &nXTicks);
+            getTickSpans(maxX, &labelSpan, &hashSpan);
             yTicks = getYTicks(minY, maxY, &nYTicks);
 
             //Basic plot setup
@@ -390,15 +360,20 @@ void makeSVGs(char *opref, strandMeth **meths, int which, int endAligned) {
                 endAligned ? buffer+dim : buffer, buffer+dim, endAligned ? buffer+dim : buffer, buffer+dim+5);
             fprintf(of,"<text x=\"%i\" y=\"%i\" text-anchor=\"middle\">%i</text>\n", \
                 endAligned ? buffer+dim : buffer, buffer+dim+20, 0);
-            for(j=0; j<nXTicks; j++) {
-                //In end-aligned mode a tick at distance d from the end is drawn at maxX-d
-                int xpos = endAligned ? maxX - xTicks[j] : xTicks[j];
+            //Grey dashed full-height hash lines at every hashSpan.
+            //In end-aligned mode a position at distance d from the end is drawn at maxX-d.
+            for(j=hashSpan; j<=maxX; j+=hashSpan) {
+                int xpos = endAligned ? maxX - j : j;
                 fprintf(of,"<line x1=\"%f\" y1=\"%i\" x2=\"%f\" y2=\"%i\" stroke-dasharray=\"5 5\" stroke=\"grey\" />\n", \
                     remapX(xpos, maxX, buffer, dim), buffer, remapX(xpos, maxX, buffer, dim), buffer+dim);
+            }
+            //Short black axis ticks and numeric labels at every labelSpan.
+            for(j=labelSpan; j<=maxX; j+=labelSpan) {
+                int xpos = endAligned ? maxX - j : j;
                 fprintf(of,"<line x1=\"%f\" y1=\"%i\" x2=\"%f\" y2=\"%i\" stroke=\"black\" />\n", \
                     remapX(xpos, maxX, buffer, dim), buffer+dim, remapX(xpos, maxX, buffer, dim), buffer+dim+5);
                 fprintf(of,"<text x=\"%f\" y=\"%i\" text-anchor=\"middle\">%i</text>\n", \
-                    remapX(xpos, maxX, buffer, dim), buffer+dim+20, xTicks[j]);
+                    remapX(xpos, maxX, buffer, dim), buffer+dim+20, j);
             }
             for(j=0; j<nYTicks; j++) {
                 fprintf(of,"<line x1=\"%i\" y1=\"%f\" x2=\"%i\" y2=\"%f\" stroke=\"black\" />\n", \
@@ -461,7 +436,6 @@ void makeSVGs(char *opref, strandMeth **meths, int which, int endAligned) {
 
             //Clean up
             fclose(of);
-            free(xTicks);
             free(yTicks);
             hasRead1 = 0;
             hasRead2 = 0;
