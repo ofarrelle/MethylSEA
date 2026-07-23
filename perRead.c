@@ -9,7 +9,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <pthread.h>
-#include "MethylDackel.h"
+#include "MethylSEA.h"
 
 void print_version(void);
 
@@ -223,7 +223,7 @@ void *perReadMetrics(void *foo) {
 }
 
 void perRead_usage() {
-    fprintf(stderr, "\nUsage: MethylDackel perRead [OPTIONS] <ref.fa> <input>\n");
+    fprintf(stderr, "\nUsage: MethylSEA perRead [OPTIONS] <ref.fa> <input>\n");
     fprintf(stderr,
 "\n"
 "This program will compute the average CpG methylation level of a given read.\n"

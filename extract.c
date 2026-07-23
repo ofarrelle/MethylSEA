@@ -12,7 +12,7 @@
 #include <limits.h>
 #include <math.h>
 #include <pthread.h>
-#include "MethylDackel.h"
+#include "MethylSEA.h"
 
 #define RUNOFFSET 99 //used to calculate the run length value to store in a BBM file, as value-to-store = actual-run-length + RUNOFFSET. Placed up here as it's a constant.
 #define BBM_VERSION 1 //the version of the BBM file format read/written here 
@@ -569,7 +569,7 @@ void printHeader(FILE *of, char *context, char *opref, Config config) {
 }
 
 void extract_usage() {
-    fprintf(stderr, "\nUsage: MethylDackel extract [OPTIONS] <ref.fa> <sorted_alignments.bam>\n");
+    fprintf(stderr, "\nUsage: MethylSEA extract [OPTIONS] <ref.fa> <sorted_alignments.bam>\n");
     fprintf(stderr,
 "\n"
 "Options:\n"

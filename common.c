@@ -1,4 +1,4 @@
-#include "MethylDackel.h"
+#include "MethylSEA.h"
 #include "version.h"
 #include <string.h>
 #include <stdlib.h>

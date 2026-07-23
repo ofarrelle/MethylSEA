@@ -8,7 +8,7 @@ CFLAGS ?= -Wall -g -O3 -pthread
 
 .SUFFIXES:.c .o
 
-all: MethylDackel
+all: MethylSEA
 
 OBJS = common.o bed.o svg.o overlaps.o extract.o MBias.o mergeContext.o perRead.o
 VERSION = 0.6.1
@@ -19,20 +19,20 @@ version.h:
 .c.o:
 	$(CC) -c $(CFLAGS) $(LIBS) -IlibBigWig $< -o $@
 
-libMethylDackel.a: version.h $(OBJS)
+libMethylSEA.a: version.h $(OBJS)
 	-@rm -f $@
 	$(AR) -rcs $@ $(OBJS)
 
-lib: libMethylDackel.a
+lib: libMethylSEA.a
 
-MethylDackel: libMethylDackel.a version.h $(OBJS)
-	$(CC) $(CFLAGS) $(LIBS) -o MethylDackel $(OBJS) main.c libMethylDackel.a $(LIBBIGWIG) -lm -lz -lpthread -lhts -lcurl
+MethylSEA: libMethylSEA.a version.h $(OBJS)
+	$(CC) $(CFLAGS) $(LIBS) -o MethylSEA $(OBJS) main.c libMethylSEA.a $(LIBBIGWIG) -lm -lz -lpthread -lhts -lcurl
 
-test: MethylDackel
+test: MethylSEA
 	python tests/test.py
 
 clean:
-	rm -f *.o MethylDackel libMethylDackel.a
+	rm -f *.o MethylSEA libMethylSEA.a
 
-install: MethylDackel
-	install MethylDackel $(prefix)
+install: MethylSEA
+	install MethylSEA $(prefix)

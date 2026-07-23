@@ -21,16 +21,16 @@ int perRead_main(int argc, char *argv[]);
 void print_version(void);
 
 void usage_main() {
-    fprintf(stderr, "MethylDackel: A tool for processing bisulfite sequencing alignments.\n"
+    fprintf(stderr, "MethylSEA: A tool for processing bisulfite sequencing alignments.\n"
 "Version: %s (using HTSlib version %s)\n", VERSION, hts_version());
     fprintf(stderr,
-"Usage: MethylDackel <command> [options]\n\n"
+"Usage: MethylSEA <command> [options]\n\n"
 "Commands:\n"
 "    mbias    Determine the position-dependent methylation bias in a dataset,\n"
 "             producing diagnostic SVG images.\n"
 "    extract  Extract methylation metrics from an alignment file in BAM/CRAM\n"
 "             format.\n"
-"    mergeContext   Combine single Cytosine metrics from 'MethylDackel extract' into\n"
+"    mergeContext   Combine single Cytosine metrics from 'MethylSEA extract' into\n"
 "             per-CpG/CHG metrics.\n"
 "    perRead  Generate a per-read methylation summary.\n"
 );

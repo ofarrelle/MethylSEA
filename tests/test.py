@@ -10,8 +10,8 @@ def rm(f):
     except OSError:
         pass
 
-assert op.exists('../MethylDackel')
-MPath = os.path.abspath('../MethylDackel')
+assert op.exists('../MethylSEA')
+MPath = os.path.abspath('../MethylSEA')
 check_call([MPath, '--version'])
 
 rm('test1_CpG.bedGraph')

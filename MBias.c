@@ -9,7 +9,7 @@
 #include <inttypes.h>
 #include <assert.h>
 #include <pthread.h>
-#include "MethylDackel.h"
+#include "MethylSEA.h"
 
 void print_version(void);
 
@@ -257,7 +257,7 @@ void *extractMBias(void *foo) {
 }
 
 void mbias_usage() {
-    fprintf(stderr, "\nUsage: MethylDackel mbias [OPTIONS] <ref.fa> <sorted_alignments.bam> <output.prefix>\n");
+    fprintf(stderr, "\nUsage: MethylSEA mbias [OPTIONS] <ref.fa> <sorted_alignments.bam> <output.prefix>\n");
     fprintf(stderr,
 "\n"
 "Options:\n"

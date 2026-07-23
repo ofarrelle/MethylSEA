@@ -4,7 +4,7 @@
 #include <assert.h>
 #include "htslib/khash.h"
 #include "htslib/sam.h"
-#include "MethylDackel.h"
+#include "MethylSEA.h"
 
 int getStrand(bam1_t *b);
 

@@ -3,10 +3,10 @@ tests/*.bedGraph
 *.o
 *.swp
 htslib/*
-libMethylDackel.a
-MethylDackel
+libMethylSEA.a
+MethylSEA
 version.h
-MethylDackel.dSYM/*
+MethylSEA.dSYM/*
 .DS_Store
 
 *__pycache__/

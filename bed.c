@@ -1,4 +1,4 @@
-#include "MethylDackel.h"
+#include "MethylSEA.h"
 #include <ctype.h>
 #include <limits.h>
 #include "htslib/kseq.h"
