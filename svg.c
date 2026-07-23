@@ -472,17 +472,19 @@ void makeSVGs(char *opref, strandMeth **meths, int which, int endAligned) {
 }
 
 void makeTXT(strandMeth **m) {
-    char *abbrevs[4] = {"OT", "OB", "CTOT", "CTOB"};
+    //Labels mirror the SVG basenames: indices 0-3 are start-aligned, 4-7 end-aligned.
+    char *labels[8] = {"OT_5prime_aligned", "OB_3prime_aligned", "CTOT", "CTOB",
+                       "OT_3prime_aligned", "OB_5prime_aligned", "CTOT_end", "CTOB_end"};
     int i, j;
 
     printf("Strand\tRead\tPosition\tnMethylated\tnUnmethylated\n");
-    for(i=0; i<4; i++) {
+    for(i=0; i<8; i++) {
         if(m[i]->l) {
             for(j=0; j<m[i]->l; j++) {
                 if(m[i]->meth1[j] || m[i]->unmeth1[j])
-                    printf("%s\t1\t%i\t%"PRIu32"\t%"PRIu32"\n", abbrevs[i], j+1, m[i]->meth1[j], m[i]->unmeth1[j]);
+                    printf("%s\t1\t%i\t%"PRIu32"\t%"PRIu32"\n", labels[i], j+1, m[i]->meth1[j], m[i]->unmeth1[j]);
                 if(m[i]->meth2[j] || m[i]->unmeth2[j])
-                    printf("%s\t2\t%i\t%"PRIu32"\t%"PRIu32"\n", abbrevs[i], j+1, m[i]->meth2[j], m[i]->unmeth2[j]);
+                    printf("%s\t2\t%i\t%"PRIu32"\t%"PRIu32"\n", labels[i], j+1, m[i]->meth2[j], m[i]->unmeth2[j]);
             }
         }
     }
