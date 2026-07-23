@@ -48,15 +48,17 @@ make test # One test will fail, but it also fails with regular methyldackel
 ```
 
 # Usage
-For `mbias`, use the execultable built by `make` and add the --endAligned flag
+For `mbias`, use the execultable built by `make`:
 ```
-./path/to/MethylDackel/MethylDackel mbias --endAligned \
+./path/to/MethylDackel/MethylDackel mbias \
     reference_genome.fa alignments.sorted.bam output_prefix
 ```
 
+> **Note:** `--endAligned` was formerly an optional parameter, but it is now turned on
+> by default. The flag is still accepted for backwards compatibility
+
 The produced mbias OT/OB plots are named by the orientation of the original read (not the BAM
-alignment, which reverse-complements OB reads). With `--endAligned` you get all
-four:
+alignment, which reverse-complements OB reads), along with which read-indexed base pair is locked on the X-axis
 
 | file | read origin | aligned at |
 |------|--------|------------|
@@ -64,6 +66,3 @@ four:
 | `output_prefix_OT_3prime_aligned.svg` | Original Top | 3' end |
 | `output_prefix_OB_5prime_aligned.svg` | Original Bottom | 5' end |
 | `output_prefix_OB_3prime_aligned.svg` | Original Bottom | 3' end |
-
-Without `--endAligned`, only the two 5'-aligned-by-BAM plots are written
-(`output_prefix_OT_5prime_aligned.svg` and `output_prefix_OB_3prime_aligned.svg`).

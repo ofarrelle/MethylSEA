@@ -306,12 +306,14 @@ void mbias_usage() {
 "                  analysis. Note that coordinates are 1-based.\n"
 " --noSVG          Don't produce the SVG files. This option implies --txt. Note\n"
 "                  that an output prefix is no longer required with this option.\n"
-" --endAligned     In addition to the normal SVG files (where each read's first\n"
-"                  base is pinned to the left), produce a second set of SVGs per\n"
-"                  strand (suffixed _end) where each read's last base is pinned to\n"
-"                  the right and the x-axis is the position from the 3' end of the\n"
-"                  read. This is useful for single-end data with variable read\n"
-"                  lengths, where end-of-read bias would otherwise be smeared.\n"
+" --endAligned     Now on by default; retained only for backwards compatibility.\n"
+"                  In addition to the normal SVG files (where each read's first\n"
+"                  base is pinned to the left), a second set of SVGs per strand\n"
+"                  (suffixed _end) is produced where each read's last base is\n"
+"                  pinned to the right and the x-axis is the position from the 3'\n"
+"                  end of the read. This is useful for single-end data with\n"
+"                  variable read lengths, where end-of-read bias would otherwise\n"
+"                  be smeared.\n"
 " --noCpG          Do not output CpG methylation metrics\n"
 " --CHG            Output CHG methylation metrics\n"
 " --CHH            Output CHH methylation metrics\n"
@@ -357,7 +359,7 @@ int mbias_main(int argc, char *argv[]) {
     config.nThreads = 1;
     config.chunkSize = 1000000;
     config.minConversionEfficiency = 0.0;
-    config.endAligned = 0;
+    config.endAligned = 1;
     for(i=0; i<16; i++) config.bounds[i] = 0;
     for(i=0; i<16; i++) config.absoluteBounds[i] = 0;
 
