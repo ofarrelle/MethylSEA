@@ -51,6 +51,7 @@ make test # One test will fail, but it also fails with regular methyldackel
 For `mbias`, use the execultable built by `make`:
 ```
 ./path/to/MethylDackel/MethylDackel mbias \
+    --txt \
     reference_genome.fa alignments.sorted.bam output_prefix
 ```
 
