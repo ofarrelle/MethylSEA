@@ -395,24 +395,12 @@ void makeSVGs(char *opref, strandMeth **meths, int which, int endAligned) {
             if(hasRead1) plotVals(of, minX1, maxX, meths[i], 1, col1, buffer, dim, minY, maxY, endAligned);
             if(hasRead2) plotVals(of, minX2, maxX, meths[i], 2, col2, buffer, dim, minY, maxY, endAligned);
 
-            //Get cutting threshold suggestions. These are defined in start-aligned
-            //coordinates, so they're only emitted for the start-aligned plots.
+            //Compute cutting threshold suggestions (start-aligned coordinates only)
+            //for the stderr printout below; they are no longer drawn onto the plot.
             lthresh1 = lthresh2 = rthresh1 = rthresh2 = 0;
             if(!endAligned) {
                 getThresholds(meths[i], 1, &lthresh1, &rthresh1);
                 getThresholds(meths[i], 2, &lthresh2, &rthresh2);
-                if(lthresh1+lthresh2+rthresh1+rthresh2) {
-                    fprintf(of, "<text x=\"%i\" y=\"%i\" text-anchor=\"end\">--%s %i,%i,%i,%i</text>\n", \
-                        2*buffer+dim-10, 2*buffer+dim-10, abbrevs[i], lthresh1, rthresh1, lthresh2, rthresh2);
-                    if(lthresh1) fprintf(of, "<line x1=\"%f\" y1=\"%i\" x2=\"%f\" y2=\"%i\" stroke-dasharray=\"5 1\" stroke=\"%s\" stroke-width=\"1\" />\n", \
-                        remapX(lthresh1, maxX, buffer, dim), dim+buffer, remapX(lthresh1, maxX, buffer, dim), buffer, col1);
-                    if(rthresh1) fprintf(of, "<line x1=\"%f\" y1=\"%i\" x2=\"%f\" y2=\"%i\" stroke-dasharray=\"5 1\" stroke=\"%s\" stroke-width=\"1\" />\n", \
-                        remapX(rthresh1, maxX, buffer, dim), dim+buffer, remapX(rthresh1, maxX, buffer, dim), buffer, col1);
-                    if(lthresh2) fprintf(of, "<line x1=\"%f\" y1=\"%i\" x2=\"%f\" y2=\"%i\" stroke-dasharray=\"5 1\" stroke=\"%s\" stroke-width=\"1\" />\n", \
-                        remapX(lthresh2, maxX, buffer, dim), dim+buffer, remapX(lthresh2, maxX, buffer, dim), buffer, col2);
-                    if(rthresh2) fprintf(of, "<line x1=\"%f\" y1=\"%i\" x2=\"%f\" y2=\"%i\" stroke-dasharray=\"5 1\" stroke=\"%s\" stroke-width=\"1\" />\n", \
-                        remapX(rthresh2, maxX, buffer, dim), dim+buffer, remapX(rthresh2, maxX, buffer, dim), buffer, col2);
-                }
             }
             //Add some legend boxes on the right
             if(hasRead1) {

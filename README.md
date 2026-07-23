@@ -19,6 +19,8 @@ With variable length reads, aligning reads originating from the Top (Watson) str
   - OT reads aligned at 3' end
   - OB reads aligned at 5' end
   - OB reads aligned at 3' end
+- improved X-axis tick labelling on mbias plots
+- removed suggested trim bounds from mbias plots
 
 # Installation
 
