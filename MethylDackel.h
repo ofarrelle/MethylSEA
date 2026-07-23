@@ -190,7 +190,7 @@ int cust_mplp_auto(bam_mplp_t iter, int *_tid, int *_pos, int *n_plp, const bam_
 //svg.c
 /*! @function
  @abstract Create the actual SVG files that the user can view
- @param opref	The output filename prefix (files will be opref_OT.svg and so on).
+ @param opref	The output filename prefix. OT/OB plots are named by original-read orientation (e.g. opref_OT_5prime_aligned.svg, opref_OB_3prime_aligned.svg, and the 3'/5' counterparts with --endAligned); CTOT/CTOB keep opref_CTOT.svg / opref_CTOT_end.svg.
  @param meths	The struct holding the methylation metrics for each of the 4 strands. If a strand is not present, it's length (->l) should be 0
  @param which   Denotes which types of Cytosines were used to generate the methylation metric. Bit 0: CpG, bit 1: CHG, bit 2: CHH (these can be combined)
 */

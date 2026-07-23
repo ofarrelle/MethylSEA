@@ -79,12 +79,16 @@ lines = sum(1 for _ in open('test7_CpG.bedGraph'))
 assert lines == 49
 rm('test7_CpG.bedGraph')
 
-# Check absolute trimming bounds
+# Check absolute trimming bounds.
+# --nOT 50,50,40,40 on the single kept OT pair (both 100bp, pos 0): read1 is
+# trimmed away entirely (50+50), read2 keeps indices 40-59, giving CpG calls at
+# even positions 40,42,...,58 = 10 data lines + 1 header = 11. The prior value of
+# 12 reflected the pre-f3f16b5 off-by-one that failed to trim the last base.
 rm('test8_CpG.bedGraph')
 check_call([MPath, 'extract', '--nOT', '50,50,40,40', 'cg100.fa', 'cg_aln.bam', '-q', '2', '-o', 'test8'])
 assert op.exists('test8_CpG.bedGraph')
 lines = sum(1 for _ in open('test8_CpG.bedGraph'))
-assert lines == 12
+assert lines == 11
 rm('test8_CpG.bedGraph')
 
 # Check variant filtering (there are 49 lines otherwise)

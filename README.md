@@ -53,3 +53,17 @@ For `mbias`, use the execultable built by `make` and add the --endAligned flag
 ./path/to/MethylDackel/MethylDackel mbias --endAligned \
     reference_genome.fa alignments.sorted.bam output_prefix
 ```
+
+The produced mbias OT/OB plots are named by the orientation of the original read (not the BAM
+alignment, which reverse-complements OB reads). With `--endAligned` you get all
+four:
+
+| file | read origin | aligned at |
+|------|--------|------------|
+| `output_prefix_OT_5prime_aligned.svg` | Original Top | 5' end |
+| `output_prefix_OT_3prime_aligned.svg` | Original Top | 3' end |
+| `output_prefix_OB_5prime_aligned.svg` | Original Bottom | 5' end |
+| `output_prefix_OB_3prime_aligned.svg` | Original Bottom | 3' end |
+
+Without `--endAligned`, only the two 5'-aligned-by-BAM plots are written
+(`output_prefix_OT_5prime_aligned.svg` and `output_prefix_OB_3prime_aligned.svg`).

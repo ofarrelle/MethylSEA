@@ -310,8 +310,7 @@ void makeSVGs(char *opref, strandMeth **meths, int which, int endAligned) {
     double minY = 1.0, maxY = 0.0;
     int minX1 = -1, minX2 = -1, maxX = 0, hasRead1 = 0, hasRead2 = 0;
     int i, j, buffer = 80, dim = 500, nXTicks, nYTicks;
-    char *suffix = endAligned ? "_end" : "";
-    char *oname = malloc(sizeof(char) *(strlen(opref)+strlen("_CTOT_end.svg ")));
+    char *oname = malloc(sizeof(char) *(strlen(opref)+strlen("_CTOT_3prime_aligned.svg ")));
     char *titles[4] = {"Original Top", "Original Bottom",
                        "Complementary to the Original Top", "Complementary to the Original Bottom"};
     char *abbrevs[4] = {"OT", "OB", "CTOT", "CTOB"};
@@ -324,6 +323,18 @@ void makeSVGs(char *opref, strandMeth **meths, int which, int endAligned) {
 
     for(i=0; i<4; i++) {
         if(meths[i]->l) {
+            //Filenames and labels use original-read orientation. OT start-aligned
+            //shows the read's 5' end; OB is reverse-complemented in the BAM, so it
+            //flips (start-aligned OB shows the 3' end). CTOT/CTOB are left unchanged.
+            int isFivePrime = (i == 0) ? !endAligned : endAligned; //meaningful for i<2
+            char *suffix, *orient = "";
+            if(i < 2) {
+                suffix = isFivePrime ? "_5prime_aligned" : "_3prime_aligned";
+                orient = isFivePrime ? " (5'-aligned)" : " (3'-aligned)";
+            } else {
+                suffix = endAligned ? "_end" : ""; //CTOT/CTOB unchanged
+            }
+
             //Get the plot bounds and tick positions
             minY = getMinY(meths[i]);
             maxY = getMaxY(meths[i]);
@@ -340,9 +351,9 @@ void makeSVGs(char *opref, strandMeth **meths, int which, int endAligned) {
             fprintf(of, "    xmlns=\"http://www.w3.org/2000/svg\"\n");
             fprintf(of, "    xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n");
             fprintf(of, "    xmlns:ev=\"http://www.w3.org/2001/xml-events\">\n");
-            fprintf(of,"<title>%s Strand</title>\n", titles[i]);
+            fprintf(of,"<title>%s Strand%s</title>\n", titles[i], orient);
             fprintf(of,"<rect x=\"0\" y=\"0\" width=\"%i\" height=\"%i\" fill=\"white\" />\n", dim+2*buffer, dim+2*buffer);
-            fprintf(of,"<text x=\"%i\" y=\"%i\" text-anchor=\"middle\">%s Strand</text>\n", buffer+(dim>>1), 20, titles[i]);
+            fprintf(of,"<text x=\"%i\" y=\"%i\" text-anchor=\"middle\">%s Strand%s</text>\n", buffer+(dim>>1), 20, titles[i], orient);
             fprintf(of,"<line x1=\"%i\" y1=\"%i\" x2=\"%i\" y2=\"%i\" stroke=\"black\" />\n", buffer, buffer, buffer, buffer+dim);
             fprintf(of,"<line x1=\"%i\" y1=\"%i\" x2=\"%i\" y2=\"%i\" stroke=\"black\" />\n", buffer, buffer+dim, buffer+dim, buffer+dim);
 
@@ -365,7 +376,12 @@ void makeSVGs(char *opref, strandMeth **meths, int which, int endAligned) {
             }
             if(doingLabel) fprintf(of, " ");
             fprintf(of, "Methylation %%</text>\n");
-            if(endAligned)
+            if(i < 2) {
+                if(isFivePrime)
+                    fprintf(of,"<text x=\"%i\" y=\"%i\" text-anchor=\"middle\">Position from 5' end of read</text>\n", buffer+(dim>>1), buffer+dim+40);
+                else
+                    fprintf(of,"<text x=\"%i\" y=\"%i\" text-anchor=\"middle\">Position from 3' end of read</text>\n", buffer+(dim>>1), buffer+dim+40);
+            } else if(endAligned)
                 fprintf(of,"<text x=\"%i\" y=\"%i\" text-anchor=\"middle\">Position from 3' end of mapped read</text>\n", buffer+(dim>>1), buffer+dim+40);
             else
                 fprintf(of,"<text x=\"%i\" y=\"%i\" text-anchor=\"middle\">Position along mapped read (5'->3' of + strand)</text>\n", buffer+(dim>>1), buffer+dim+40);
