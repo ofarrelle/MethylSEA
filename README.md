@@ -1,18 +1,18 @@
 # MethylSEA
 
-This is a fork of MethylSEA, informally named MethylSEA (single end analysis). MethylSEA processes BAM/CRAM files from BS-seq-style libraries to identify methylation bias and extract per-base methylation metrics. The original README for MethylSEA can be found in MethylSEA_README.md or at [MethylSEA's GitHub page](https://github.com/dpryan79/MethylSEA)
+This is a fork of MethylDackel, informally named MethylSEA (single end analysis). MethylDackel processes BAM/CRAM files from BS-seq-style libraries to identify methylation bias and extract per-base methylation metrics. The original README for MethylDackel can be found in MethylDackel_README.md or at [MethylDackel's GitHub page](https://github.com/dpryan79/MethylSEA)
 
 # Why MethylSEA?
 
-MethylSEA was designed for data sequenced on Illumina platforms, typically paired-end sequencing with constant read length. Some features therefore fail when used on data from single-end reads with variable length, such as from the Ultima Genomics platform. 
+MethylDackel was designed for data sequenced on Illumina platforms, typically paired-end sequencing with constant read length. Some features therefore fail when used on data from single-end reads with variable length, such as from the Ultima Genomics platform. 
 
 ## mbias
 
 ![](end_alignment.png)
 
-`MethylSEA mbias` creates a line plot of the average methylation rate per base pair, indexed by position within the read. Indexing base pairs from 1 within the read aligns reads at the 1st base pair (5' end). With Illumina paired-end sequencing, all reads are the same length, so this process also aligns them at the last base pair (3' end), which makes it simple to identify the number of bases to cut off the 5' and 3' end of each read to account for methylation bias.
+`MethylDackel mbias` creates a line plot of the average methylation rate per base pair, indexed by position within the read. Indexing base pairs from 1 within the read aligns reads at the 1st base pair (5' end). With Illumina paired-end sequencing, all reads are the same length, so this process also aligns them at the last base pair (3' end), which makes it simple to identify the number of bases to cut off the 5' and 3' end of each read to account for methylation bias.
 
-With variable length reads, aligning reads originating from the Top (Watson) strand at the 5' end does not align the 3' ends, so in the default `mbias` OT plot, the affect of 3' end repair bias is scattered along the x-axis. This default plot can only inform the number of base pairs affected by 5' methylation bias in OT reads. Crucially, reads originating from the Bottom (Crick) strand are reverse complemented in the BAM file entry, and MethylSEA plots and aligns from left to right (5' to 3' on the reverse complement). Therefore in default `mbias` OB plots, the 3' ends of the original reads are aligned. This plot can only inform the number of base pairs affected by 3' end repair bias in OB reads. Clearly with the default plots, the information for OT 3' bias and OB 5' bias is visually confounded in the plots.
+With variable length reads, aligning reads originating from the Top (Watson) strand at the 5' end does not align the 3' ends, so in the default `mbias` OT plot, the affect of 3' end repair bias is scattered along the x-axis. This default plot can only inform the number of base pairs affected by 5' methylation bias in OT reads. Crucially, reads originating from the Bottom (Crick) strand are reverse complemented in the BAM file entry, and MethylDackel plots and aligns from left to right (5' to 3' on the reverse complement). Therefore in default `mbias` OB plots, the 3' ends of the original reads are aligned. This plot can only inform the number of base pairs affected by 3' end repair bias in OB reads. Clearly with the default plots, the information for OT 3' bias and OB 5' bias is visually confounded in the plots.
 
 ## MethylSEA Features
 
