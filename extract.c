@@ -699,6 +699,25 @@ void extract_usage() {
 " --nCTOB INT,INT,INT,INT As with --nOT, but for the original bottom,\n"
 "                  complementary to the original top, and complementary to the\n"
 "                  original bottom strands, respectively.\n"
+" --five-prime-trim INT Always mask INT bases from the biological 5' end of\n"
+"                  every read, regardless of which strand (OT/OB/CTOT/CTOB) it\n"
+"                  originated from. Unlike --nOT/--nOB/etc., this is anchored to\n"
+"                  the read's actual 5'/3' orientation (via the SAM reverse\n"
+"                  flag), not to BAM storage order, so it applies consistently\n"
+"                  even to reverse-complemented (OB/CTOT) reads. A value of 0\n"
+"                  (the default) disables this.\n"
+" --three-prime-trim INT As with --five-prime-trim, but masks INT bases from\n"
+"                  the biological 3' end of every read. A value of 0 (the\n"
+"                  default) disables this.\n"
+" --max-length INT Mask every base beyond biological position INT from the 5'\n"
+"                  start of the read (i.e., only the first INT bases of each\n"
+"                  read, counted from its 5' end, are retained). This is\n"
+"                  length-aware: unlike an --OT-style absolute bound, the\n"
+"                  cutoff is computed per read from its own length, so it\n"
+"                  behaves consistently across reads/fragments of varying\n"
+"                  length. A value of 0 (the default) disables this. Can be\n"
+"                  combined with --five-prime-trim/--three-prime-trim; the more\n"
+"                  restrictive of the two ever wins at a given end.\n"
 " --version        Print version and then quit.\n"
 "\nNote that --fraction, --counts, and --logit are mutually exclusive!\n");
 }
@@ -751,6 +770,9 @@ int extract_main(int argc, char *argv[]) {
     config.minConversionEfficiency = 0.0;
     for(i=0; i<16; i++) config.bounds[i] = 0;
     for(i=0; i<16; i++) config.absoluteBounds[i] = 0;
+    config.trim5 = 0;
+    config.trim3 = 0;
+    config.maxReadPos = 0;
 
     static struct option lopts[] = {
         {"opref",        1, NULL, 'o'},
@@ -781,6 +803,9 @@ int extract_main(int argc, char *argv[]) {
         {"cytosine_report", 0, NULL, 21},
         {"minConversionEfficiency", 1, NULL, 22},
         {"ignoreNH",     0, NULL, 23},
+        {"five-prime-trim", 1, NULL, 24},
+        {"three-prime-trim", 1, NULL, 25},
+        {"max-length",   1, NULL, 26},
         {"ignoreFlags",  1, NULL, 'F'},
         {"requireFlags", 1, NULL, 'R'},
         {"help",         0, NULL, 'h'},
@@ -892,6 +917,15 @@ int extract_main(int argc, char *argv[]) {
             break;
         case 23:
             config.ignoreNH = 1;
+            break;
+        case 24:
+            config.trim5 = atoi(optarg);
+            break;
+        case 25:
+            config.trim3 = atoi(optarg);
+            break;
+        case 26:
+            config.maxReadPos = atoi(optarg);
             break;
         case 'M':
             config.BWName = optarg;

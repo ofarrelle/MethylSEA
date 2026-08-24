@@ -333,6 +333,17 @@ void mbias_usage() {
 " --nCTOB INT,INT,INT,INT As with --nOT, but for the original bottom, complementary\n"
 "                  to the original top, and complementary to the original bottom\n"
 "                  strands, respectively.\n"
+" --five-prime-trim INT Always mask INT bases from the biological 5' end of\n"
+"                  every read, regardless of strand. Unlike --nOT/--nOB/etc.,\n"
+"                  this is anchored to the read's actual 5'/3' orientation (via\n"
+"                  the SAM reverse flag), not BAM storage order, so it applies\n"
+"                  consistently to reverse-complemented (OB/CTOT) reads too. A\n"
+"                  value of 0 (the default) disables this.\n"
+" --three-prime-trim INT As with --five-prime-trim, but masks INT bases from\n"
+"                  the biological 3' end of every read.\n"
+" --max-length INT Mask every base beyond biological position INT from the 5'\n"
+"                  start of the read; the cutoff is computed per read from its\n"
+"                  own length. A value of 0 (the default) disables this.\n"
 " --version        Print version and the quit\n");
 }
 
@@ -362,6 +373,9 @@ int mbias_main(int argc, char *argv[]) {
     config.endAligned = 1;
     for(i=0; i<16; i++) config.bounds[i] = 0;
     for(i=0; i<16; i++) config.absoluteBounds[i] = 0;
+    config.trim5 = 0;
+    config.trim3 = 0;
+    config.maxReadPos = 0;
 
     static struct option lopts[] = {
         {"noCpG",        0, NULL,   1},
@@ -381,6 +395,9 @@ int mbias_main(int argc, char *argv[]) {
         {"minConversionEfficiency", 1, NULL, 15},
         {"ignoreNH",     0, NULL,  16},
         {"endAligned",   0, NULL,  17},
+        {"five-prime-trim", 1, NULL, 18},
+        {"three-prime-trim", 1, NULL, 19},
+        {"max-length",   1, NULL, 20},
         {"ignoreFlags",  1, NULL, 'F'},
         {"requireFlags", 1, NULL, 'R'},
         {"help",         0, NULL, 'h'},
@@ -459,6 +476,15 @@ int mbias_main(int argc, char *argv[]) {
             break;
         case 17:
             config.endAligned = 1;
+            break;
+        case 18:
+            config.trim5 = atoi(optarg);
+            break;
+        case 19:
+            config.trim3 = atoi(optarg);
+            break;
+        case 20:
+            config.maxReadPos = atoi(optarg);
             break;
         case 'F' :
             config.ignoreFlags = atoi(optarg);

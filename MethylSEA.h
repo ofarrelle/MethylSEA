@@ -120,6 +120,7 @@ typedef struct {
     char *FastaName;
     int bounds[16];
     int absoluteBounds[16];
+    int trim5, trim3, maxReadPos;
     int nThreads;
     char noBAM;
     unsigned long chunkSize;
@@ -239,6 +240,13 @@ int updateMetrics(Config *config, const bam_pileup1_t *plp);
 
 //Used internally to parse things like --OT 0,1,2,3
 void parseBounds(char *s2, int *vals, int mult);
+
+//Convert bases outside of the bounds to N and their phred scores to 0
+bam1_t *trimAlignment(bam1_t *b, int bounds[16]);
+bam1_t *trimAbsoluteAlignment(bam1_t *b, int bounds[16]);
+
+//Mask bases outside a biologically-anchored N/M/K window (see common.c for details)
+bam1_t *trimByBiologicalPosition(bam1_t *b, int N, int M, int K);
 
 //Used internally to not split CpGs/CHGs between threads
 void adjustBounds(Config *config, bam_hdr_t *hdr, faidx_t *fai, uint32_t *localTid, uint32_t *localPos, uint32_t *localEnd);

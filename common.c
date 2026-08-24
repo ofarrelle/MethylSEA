@@ -207,6 +207,48 @@ bam1_t *trimAbsoluteAlignment(bam1_t *b, int bounds[16]) {
     return b;
 }
 
+//Zero quality (and mask base calls) for [start, end) in BAM SEQ order.
+static void maskQualRange(bam1_t *b, int start, int end) {
+    uint8_t *qual = bam_get_qual(b);
+    uint8_t *seq = bam_get_seq(b);
+    int i;
+    for(i = start; i < end; i++) {
+        qual[i] = 0;
+        if(i & 1) seq[i>>1] |= 0xf;
+        else seq[i>>1] |= 0xf0;
+    }
+}
+
+//Mask bases outside a biologically-anchored window: N bases from the true
+//5' end, M bases from the true 3' end, and anything beyond biological
+//position K from the 5' start (K<=0 means unbounded). Unlike
+//trimAlignment/trimAbsoluteAlignment, this is anchored to the physical
+//read's own orientation (via the SAM reverse flag), not to BAM SEQ storage
+//order, so it's correct for OB/CTOT reads (which are reverse-complemented
+//in the BAM, flipping which stored end is biological 5' vs 3').
+bam1_t *trimByBiologicalPosition(bam1_t *b, int N, int M, int K) {
+    int L = b->core.l_qseq;
+    int leftCut, rightCut;
+
+    if(!bam_is_rev(b)) {
+        //Stored index 0 == biological 5', index L-1 == biological 3'
+        leftCut = (N < L) ? N : L;
+        rightCut = (K > 0) ? ((L - M < K) ? L - M : K) : L - M;
+        if(rightCut < 0) rightCut = 0;
+    } else {
+        //Stored index 0 == biological 3', index L-1 == biological 5'
+        leftCut = (K > 0) ? ((M > L - K) ? M : L - K) : M;
+        if(leftCut > L) leftCut = L;
+        rightCut = L - N;
+        if(rightCut < 0) rightCut = 0;
+    }
+
+    if(leftCut > 0) maskQualRange(b, 0, leftCut);
+    if(rightCut < L) maskQualRange(b, rightCut, L);
+
+    return b;
+}
+
 unsigned char* getMappabilityValue(Config* config, char* chrom_n, uint32_t start, uint32_t end)
 {
     char chromFound = 0;
@@ -457,6 +499,8 @@ int filter_func(void *data, bam1_t *b) {
         ***********************************************************************/
         if(ldata->config->bounds) b = trimAlignment(b, ldata->config->bounds);
         if(ldata->config->absoluteBounds) b = trimAbsoluteAlignment(b, ldata->config->absoluteBounds);
+        if(ldata->config->trim5 || ldata->config->trim3 || ldata->config->maxReadPos)
+            b = trimByBiologicalPosition(b, ldata->config->trim5, ldata->config->trim3, ldata->config->maxReadPos);
         break;
     }
     return rv;
