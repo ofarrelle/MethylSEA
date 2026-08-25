@@ -1,3 +1,14 @@
+Version 0.7.0:
+
+   * Renamed the forked project to MethylSEA (single-end analysis), targeting bisulfite-like methylation data with variable read lengths (e.g. Ultima Genomics).
+   * `mbias` now produces plots for all 4 alignment possibilities (OT/OB, aligned at 5' and 3' ends), rather than being confounded by BAM-entry orientation for reverse-strand reads.
+   * Added `--txt` output for all 4 mbias plots.
+   * Removed suggested trim bounds from mbias plots
+   * Improved x-axis tick label spacing.
+   * Added `--five-prime-trim`, `--three-prime-trim`, and `--max-length` to `extract`. These trim relative to the biological 5'/3' end of the original read, behaving symmetrically for reads on either strand (unlike `--OT`/`--OB`, which are indexed from the BAM entry and are reverse-complemented for OB reads).
+   * Fixed an off-by-one in end trimming that could overflow into the seq/qual arrays.
+   * Fixed the mapping position used for read-pair overlap computation.
+
 Version 0.6.1:
 
    * Added the `--ignoreNH` option, which allows inclusion of multimappers normally excluded with the NH flag.

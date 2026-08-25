@@ -11,7 +11,7 @@ CFLAGS ?= -Wall -g -O3 -pthread
 all: MethylSEA
 
 OBJS = common.o bed.o svg.o overlaps.o extract.o MBias.o mergeContext.o perRead.o
-VERSION = 0.6.1
+VERSION = 0.7.0
 
 version.h:
 	echo '#define VERSION "$(VERSION)"' > $@
