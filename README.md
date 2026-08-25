@@ -34,7 +34,7 @@ The built in paramters `--OT` and `--nOT` for `MethylDackel extract` can accompl
 - option to use `--five-prime-trim`, `--three-prime-trim`, and `--max-length` (see `extract` documentation below)
 
 ### `extract`
-- new base pair trimming options oriented to the biological 5' end of the original read. Behavior is symmetrical for reads from both strands.
+- new base pair trimming options oriented to the biological 5' end of the original read. Behavior is symmetrical for reads from both strands. These are mutually exclusive of `--OT`,`--nOT`, `--OB`, `--nOB`, etc parameters
   - `--five-prime-trim` - number of bases to ignore at the 5' end of the original read due to methylation bias
   - `--three-prime-trim` - number of bases to ignore at the 3' end of the original read due to methylation bias
   - `--max-length` - ignore all bases beyond this index (exclusive)
@@ -68,11 +68,15 @@ make test
 
 # Usage
 
-For `mbias`, use the execultable built by `make`:
+Use the executable built by `make`
+
+### `mbias`
 ```
 ./path/to/MethylSEA/MethylSEA mbias \
     --txt \
-    reference_genome.fa alignments.sorted.bam output_prefix
+    reference_genome.fa \
+    alignments.sorted.bam \
+    output_prefix
 ```
 
 > **Note:** `--endAligned` was formerly an optional parameter, but it is now turned on
@@ -87,3 +91,14 @@ alignment, which reverse-complements OB reads), along with which read-indexed ba
 | `output_prefix_OT_3prime_aligned.svg` | Original Top | 3' end |
 | `output_prefix_OB_5prime_aligned.svg` | Original Bottom | 5' end |
 | `output_prefix_OB_3prime_aligned.svg` | Original Bottom | 3' end |
+
+### `extract`
+```
+./path/to/MethylSEA/MethylSEA extract \
+    --five-prime-trim 10 \
+    --three-prime-trim 20 \
+    --max-length 140 \
+    -o $output_prefix
+    reference_genome.fa \
+    alignments.sorted.bam
+```

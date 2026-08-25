@@ -42,6 +42,12 @@ void parseBounds(char *s2, int *vals, int mult) {
     free(s);
 }
 
+int boundsSpecified(int bounds[16]) {
+    int i;
+    for(i = 0; i < 16; i++) if(bounds[i]) return 1;
+    return 0;
+}
+
 void print_version() {
     printf("%s (using HTSlib version %s)\n", VERSION, hts_version());
 }

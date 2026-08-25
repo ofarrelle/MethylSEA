@@ -344,6 +344,10 @@ void mbias_usage() {
 " --max-length INT Mask every base beyond biological position INT from the 5'\n"
 "                  start of the read; the cutoff is computed per read from its\n"
 "                  own length. A value of 0 (the default) disables this.\n"
+"                  --five-prime-trim/--three-prime-trim/--max-length are mutually\n"
+"                  exclusive of --nOT/--nOB/--nCTOT/--nCTOB, since they trim\n"
+"                  relative to a read's biological 5'/3' orientation rather than\n"
+"                  BAM storage order/strand.\n"
 " --version        Print version and the quit\n");
 }
 
@@ -532,6 +536,15 @@ int mbias_main(int argc, char *argv[]) {
     if(!(config.keepCpG + config.keepCHG + config.keepCHH)) {
         fprintf(stderr, "You haven't specified any metrics to output!\nEither don't use the --noCpG option or specify --CHG and/or --CHH.\n");
         return -1;
+    }
+    if((config.trim5 || config.trim3 || config.maxReadPos) && boundsSpecified(config.absoluteBounds)) {
+        fprintf(stderr, "--five-prime-trim/--three-prime-trim/--max-length cannot be combined with "
+                        "--nOT/--nOB/--nCTOT/--nCTOB. The former trim relative to a read's biological "
+                        "5'/3' orientation while the latter trim relative to BAM storage order/strand "
+                        "-- these are two incompatible ways of specifying read ends and are mutually "
+                        "exclusive.\n");
+        mbias_usage();
+        return 1;
     }
 
     //Open the files

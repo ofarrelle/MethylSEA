@@ -717,7 +717,11 @@ void extract_usage() {
 "                  behaves consistently across reads/fragments of varying\n"
 "                  length. A value of 0 (the default) disables this. Can be\n"
 "                  combined with --five-prime-trim/--three-prime-trim; the more\n"
-"                  restrictive of the two ever wins at a given end.\n"
+"                  restrictive of the two ever wins at a given end. These three\n"
+"                  options are mutually exclusive of --OT/--OB/--CTOT/--CTOB and\n"
+"                  --nOT/--nOB/--nCTOT/--nCTOB, since they trim relative to a\n"
+"                  read's biological 5'/3' orientation rather than BAM storage\n"
+"                  order/strand.\n"
 " --version        Print version and then quit.\n"
 "\nNote that --fraction, --counts, and --logit are mutually exclusive!\n");
 }
@@ -1051,6 +1055,16 @@ int extract_main(int argc, char *argv[]) {
     }
     if(config.cytosine_report + config.merge == 2) {
         fprintf(stderr, "--mergeContext and --cytosine_report are mutually exclusive.\n");
+        extract_usage();
+        return 1;
+    }
+    if((config.trim5 || config.trim3 || config.maxReadPos) &&
+       (boundsSpecified(config.bounds) || boundsSpecified(config.absoluteBounds))) {
+        fprintf(stderr, "--five-prime-trim/--three-prime-trim/--max-length cannot be combined with "
+                        "--OT/--OB/--CTOT/--CTOB or --nOT/--nOB/--nCTOT/--nCTOB. The former trim "
+                        "relative to a read's biological 5'/3' orientation while the latter trim "
+                        "relative to BAM storage order/strand -- these are two incompatible ways of "
+                        "specifying read ends and are mutually exclusive.\n");
         extract_usage();
         return 1;
     }

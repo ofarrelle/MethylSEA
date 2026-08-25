@@ -241,6 +241,9 @@ int updateMetrics(Config *config, const bam_pileup1_t *plp);
 //Used internally to parse things like --OT 0,1,2,3
 void parseBounds(char *s2, int *vals, int mult);
 
+//Returns 1 if any entry in a bounds[16]/absoluteBounds[16] array is nonzero
+int boundsSpecified(int bounds[16]);
+
 //Convert bases outside of the bounds to N and their phred scores to 0
 bam1_t *trimAlignment(bam1_t *b, int bounds[16]);
 bam1_t *trimAbsoluteAlignment(bam1_t *b, int bounds[16]);

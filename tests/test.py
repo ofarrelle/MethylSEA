@@ -1,4 +1,4 @@
-from subprocess import check_call
+from subprocess import check_call, CalledProcessError
 import os
 import os.path as op
 wd = op.dirname(op.realpath(__file__))
@@ -204,6 +204,31 @@ assert op.exists('test18_CpG.bedGraph')
 expected = set(range(0, 50, 2)) | set(range(51, 98, 2))
 assert bedGraphPositions('test18_CpG.bedGraph') == expected
 rm('test18_CpG.bedGraph')
+
+# --five-prime-trim/--three-prime-trim/--max-length trim relative to a read's
+# biological 5'/3' orientation, while --OT/--OB/--CTOT/--CTOB/--nOT/--nOB/
+# --nCTOT/--nCTOB trim relative to BAM storage order/strand. These are two
+# incompatible schools of thought and must be rejected as mutually exclusive.
+rm('test19_CpG.bedGraph')
+try:
+    check_call([MPath, 'extract', '--five-prime-trim', '10', '--nOT', '5,0,0,0', 'cg100.fa', 'biopos_aln.bam', '-o', 'test19'])
+    raise AssertionError("extract should have failed: --five-prime-trim and --nOT are mutually exclusive")
+except CalledProcessError:
+    pass
+assert not op.exists('test19_CpG.bedGraph')
+
+try:
+    check_call([MPath, 'extract', '--max-length', '50', '--OT', '5,0,0,0', 'cg100.fa', 'biopos_aln.bam', '-o', 'test19'])
+    raise AssertionError("extract should have failed: --max-length and --OT are mutually exclusive")
+except CalledProcessError:
+    pass
+assert not op.exists('test19_CpG.bedGraph')
+
+try:
+    check_call([MPath, 'mbias', '--max-length', '50', '--nOB', '5,0,0,0', 'cg100.fa', 'biopos_aln.bam', 'test19_mbias', '--noSVG'])
+    raise AssertionError("mbias should have failed: --max-length and --nOB are mutually exclusive")
+except CalledProcessError:
+    pass
 
 print("Finished correctly")
 
